@@ -1,0 +1,343 @@
+# import streamlit as st
+# import pandas as pd
+# import numpy as np
+# import pandas as pd
+# from sklearn.cluster import KMeans
+# from sklearn.preprocessing import StandardScaler
+# import matplotlib.pyplot as plt
+# # import seaborn as sns
+# import re
+# # from fuzzywuzzy import process
+
+# stock_info = pd.read_excel(r'C:\Dhruv\Stokc_clustering\stock_info.xlsx')
+
+# # st.dataframe(stock_info.head())
+# def clean_stock_data(file_path):
+#     # Load the data
+#     stock_info = pd.read_excel(file_path)
+#     stock = stock_info.iloc[:, :26]
+#     # stock.dropna(subset=['FIIs', 'DIIs', 'StockPE', 'OPM', 'OperatingProfit', 'Promoters', 'EPSinRs', 'ROE', 'BookValue'], inplace=True)
+
+#     # Function to remove special characters from column names
+#     def remove_char(string):
+#         return re.sub('[^A-Za-z0-9]+', '', string)
+
+#     # Clean column names
+#     stock.columns = [remove_char(column) for column in stock.columns]
+
+#     # Drop rows with missing values in specific columns
+#     # stock.dropna(subset=['FIIs', 'DIIs', 'StockPE', 'OPM', 'OperatingProfit', 'Promoters', 'EPSinRs', 'ROE', 'BookValue'], inplace=True)
+
+#     # Drop the 'Government' column
+#     stock.drop(columns='Government', inplace=True)
+
+#     # Function to clean market cap and other numeric columns
+#     def clean_numeric(value):
+#     # Remove non-numeric characters except for the decimal point
+#         value = re.sub(r'[^\d.]', '', str(value)).strip('.')
+#         # Check if the resulting string is empty
+#         if value == '':
+#             return np.nan
+#         # Convert to numeric
+#         return float(value)
+
+    
+
+#     # Apply cleaning function to MarketCap column
+#     # Remove "₹" symbol and "Cr." suffix
+#     stock['BookValue'] = stock['BookValue'].str.replace('₹', '', regex=False).str.replace('Cr.', '', regex=False).apply(clean_numeric)
+#     stock['MarketCap'] = stock['MarketCap'].str.replace('₹', '', regex=False).str.replace('Cr.', '', regex=False).apply(clean_numeric)
+
+#     # Convert specified columns to numeric
+#     columns_to_convert = ['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap']
+#     for column in columns_to_convert:
+#         stock[column] = stock[column].astype(str).apply(clean_numeric)
+
+#     return stock
+
+# cleaned_stock_data = clean_stock_data(r'C:\Dhruv\Stokc_clustering\stock_info.xlsx')
+# cleaned_stock_data.dropna(subset=['FIIs', 'DIIs', 'StockPE', 'OPM', 'OperatingProfit', 'Promoters', 'EPSinRs', 'ROE', 'BookValue'], inplace=True)
+
+# data = cleaned_stock_data[['StockPE', 'BookValue', 'DividendYield', 'ROE','MarketCap']]
+
+# # Standardize the data
+# scaler = StandardScaler()
+# scaled_data = scaler.fit_transform(data)
+
+
+# optimal_k = 10
+# kmeans = KMeans(n_clusters=optimal_k)
+# kmeans.fit(scaled_data)
+# labels = kmeans.labels_
+
+# # Add cluster labels to the original DataFrame
+# cleaned_stock_data['Cluster'] = labels
+
+# # Visualize the clustering results
+# # sns.pairplot(cleaned_stock_data, hue='Cluster', palette='viridis')
+# # plt.show()
+
+# # Optional: Inspect centroids
+# centroids = kmeans.cluster_centers_
+# centroids_original_space = scaler.inverse_transform(centroids)
+# centroids_df = pd.DataFrame(centroids_original_space, columns=['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap'])
+# # st.dataframe(centroids_df)
+
+# def find_similar_stocks(stock_name, stock_df):
+#     if stock_name not in stock_df['Ticker'].values:
+#         return f"Stock '{stock_name}' not found in the dataset."
+
+#     # Find the cluster of the given stock
+#     stock_cluster = stock_df[stock_df['Ticker'] == stock_name]['Cluster'].values[0]
+
+#     # Retrieve stock names in the same cluster
+#     similar_stocks = stock_df[stock_df['Cluster'] == stock_cluster]['Ticker'].tolist()
+
+#     # Remove the given stock from the list
+#     similar_stocks.remove(stock_name)
+
+#     return similar_stocks
+
+
+# import numpy as np
+
+# def find_nearest_stock_to_target(target_stock, cleaned_stock_data, centroids_df):
+#     # Find the cluster label of the target stock
+#     target_cluster_label = cleaned_stock_data.loc[cleaned_stock_data['Ticker'] == target_stock, 'Cluster'].values[0]
+    
+#     # Filter data points belonging to the same cluster as the target stock
+#     cluster_data = cleaned_stock_data[cleaned_stock_data['Cluster'] == target_cluster_label]
+    
+#     # Extract centroid of the target cluster
+#     centroid = centroids_df.iloc[target_cluster_label]
+    
+#     # Calculate Euclidean distance between each data point and the centroid
+#     distances = np.linalg.norm(cluster_data[['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap']].values - centroid.values, axis=1)
+    
+#     # Find the index of the nearest stock in the cluster
+#     nearest_index = distances.argmin()
+    
+#     # Get the details of the nearest stock
+#     nearest_stock = cluster_data.iloc[nearest_index]
+    
+#     return nearest_stock
+# new_list = cleaned_stock_data['Ticker'].tolist()
+# result = st.selectbox('STOCK NAME', new_list)
+
+# nearest_stock = find_nearest_stock_to_target(result,cleaned_stock_data, centroids_df)
+# if nearest_stock:
+#     st.write(f"The closest stock to {result} is {nearest_stock}")
+#     nearest_stock_data = cleaned_stock_data[cleaned_stock_data['Ticker'] == nearest_stock].T
+#     st.write("Details of the closest stock:")
+#     st.dataframe(nearest_stock_data)
+
+# similar_stocks_st = find_similar_stocks(result, data)
+# if similar_stocks_st:
+#     similar_stocks_data = cleaned_stock_data[cleaned_stock_data['Ticker'].isin(similar_stocks_st)].T
+#     st.write("Similar stocks which belong to the same category:")
+#     st.dataframe(similar_stocks_data)
+# else:
+#     st.write("No similar stocks found.")
+
+ #--------------------------------------------------------------------------------------------
+import streamlit as st
+import pandas as pd
+import numpy as np
+import re
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+# Function to clean numeric values
+def clean_numeric(value):
+    value = re.sub(r'[^\d.]', '', str(value)).strip('.')
+    if value == '':
+        return np.nan
+    return float(value)
+
+# Function to clean stock data
+def clean_stock_data(file_path):
+    stock_info = pd.read_excel(file_path)
+    stock = stock_info.iloc[:, :26]
+
+    def remove_char(string):
+        return re.sub('[^A-Za-z0-9]+', '', string)
+
+    stock.columns = [remove_char(column) for column in stock.columns]
+
+    if 'Government' in stock.columns:
+        stock.drop(columns='Government', inplace=True)
+
+    columns_to_clean = ['MarketCap', 'BookValue', 'StockPE', 'DividendYield', 'ROE']
+    for column in columns_to_clean:
+        if column in stock.columns:
+            stock[column] = stock[column].astype(str).apply(clean_numeric)
+
+    return stock
+
+# Load and clean the stock data
+cleaned_stock_data = clean_stock_data(r' n.xlsx')
+cleaned_stock_data.dropna(subset=['FIIs', 'DIIs', 'StockPE', 'OPM', 'OperatingProfit', 'Promoters', 'EPSinRs', 'ROE', 'BookValue'], inplace=True)
+
+# Select relevant columns for clustering
+data = cleaned_stock_data[['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap']]
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(data)
+
+# Perform KMeans clustering
+optimal_k = 10
+kmeans = KMeans(n_clusters=optimal_k)
+kmeans.fit(scaled_data)
+labels = kmeans.labels_
+
+# Add cluster labels to the original DataFrame
+cleaned_stock_data['Cluster'] = labels
+
+# Calculate centroids in the original space
+centroids = kmeans.cluster_centers_
+centroids_original_space = scaler.inverse_transform(centroids)
+centroids_df = pd.DataFrame(centroids_original_space, columns=['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap'])
+
+# Function to find the nearest stock to the target stock
+def find_nearest_stock_to_target(target_stock, cleaned_stock_data, centroids_df):
+    target_cluster_label = cleaned_stock_data.loc[cleaned_stock_data['Ticker'] == target_stock, 'Cluster'].values[0]
+    cluster_data = cleaned_stock_data[cleaned_stock_data['Cluster'] == target_cluster_label]
+    centroid = centroids_df.iloc[target_cluster_label]
+    distances = np.linalg.norm(cluster_data[['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap']].values - centroid.values, axis=1)
+    nearest_index = distances.argmin()
+    nearest_stock = cluster_data.iloc[nearest_index]
+    return nearest_stock
+
+# Function to find similar stocks
+def find_similar_stocks(stock_name, stock_df):
+    if stock_name not in stock_df['Ticker'].values:
+        return f"Stock '{stock_name}' not found in the dataset."
+
+    stock_cluster = stock_df[stock_df['Ticker'] == stock_name]['Cluster'].values[0]
+    similar_stocks = stock_df[stock_df['Cluster'] == stock_cluster]['Ticker'].tolist()
+    similar_stocks.remove(stock_name)
+    return similar_stocks
+
+# Streamlit interface
+new_list = cleaned_stock_data['Ticker'].tolist()
+result = st.selectbox('STOCK NAME', new_list)
+
+nearest_stock = find_nearest_stock_to_target(result, cleaned_stock_data, centroids_df)
+if nearest_stock is not None:
+    st.write(f"The closest stock to {result} is {nearest_stock['Ticker']}")
+    nearest_stock_data = cleaned_stock_data[cleaned_stock_data['Ticker'] == nearest_stock['Ticker']].T
+    st.write("Details of the closest stock:")
+    st.dataframe(nearest_stock_data)
+
+similar_stocks_st = find_similar_stocks(result, cleaned_stock_data)
+if similar_stocks_st:
+    similar_stocks_data = cleaned_stock_data[cleaned_stock_data['Ticker'].isin(similar_stocks_st)].T
+    st.write("Similar stocks which belong to the same category:")
+    st.dataframe(similar_stocks_data)
+else:
+    st.write("No similar stocks found.")
+
+#--------------------------------------------------------------------------------------------------   
+# Example usage
+# target_stock_name = "HCLTECH"  # Replace with the name of the target stock
+# nearest_stock_to_target = find_nearest_stock_to_target(target_stock_name, cleaned_stock_data, centroids_df)
+# print(nearest_stock_to_target)
+
+# import streamlit as st
+# import pandas as pd
+# import numpy as np
+# import re
+# from sklearn.cluster import KMeans
+# from sklearn.preprocessing import StandardScaler
+
+# # Function to clean stock data
+# def clean_stock_data(file_path):
+#     stock_info = pd.read_excel(file_path)
+#     stock = stock_info.iloc[:, :26]
+
+#     # Function to remove special characters from column names
+#     def remove_char(string):
+#         return re.sub('[^A-Za-z0-9]+', '', string)
+
+#     # Clean column names
+#     stock.columns = [remove_char(column) for column in stock.columns]
+
+#     # Drop the 'Government' column if it exists
+#     if 'Government' in stock.columns:
+#         stock.drop(columns='Government', inplace=True)
+
+#     # Function to clean numeric columns
+#     def clean_numeric(value):
+#         value = re.sub(r'[^\d.]', '', str(value)).strip('.')
+#         return float(value) if value else np.nan
+
+#     # Clean specific columns
+#     stock['BookValue'] = stock['BookValue'].str.replace('₹', '', regex=False).str.replace('Cr.', '', regex=False).apply(clean_numeric)
+#     stock['MarketCap'] = stock['MarketCap'].str.replace('₹', '', regex=False).str.replace('Cr.', '', regex=False).apply(clean_numeric)
+#     columns_to_convert = ['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap']
+#     for column in columns_to_convert:
+#         stock[column] = stock[column].astype(str).apply(clean_numeric)
+
+#     # Drop rows with missing values in specific columns
+#     stock.dropna(subset=['FIIs', 'DIIs', 'StockPE', 'OPM', 'OperatingProfit', 'Promoters', 'EPSinRs', 'ROE', 'BookValue'], inplace=True)
+    
+#     return stock
+
+# # Example usage
+# file_path = r'C:\Dhruv\Stokc_clustering\stock_info.xlsx'
+# cleaned_stock_data = clean_stock_data(file_path)
+
+# data = cleaned_stock_data[['StockPE', 'BookValue', 'DividendYield', 'ROE', 'MarketCap']]
+
+# # Standardize the data
+# scaler = StandardScaler()
+# scaled_data = scaler.fit_transform(data)
+
+# # Clustering
+# optimal_k = 10
+# kmeans = KMeans(n_clusters=optimal_k)
+# kmeans.fit(scaled_data)
+# labels = kmeans.labels_
+# cleaned_stock_data['Cluster'] = labels
+
+# # Find similar stocks function
+# def find_similar_stocks(stock_name, stock_df):
+#     if stock_name not in stock_df['Ticker'].values:
+#         return []
+#     stock_cluster = stock_df[stock_df['Ticker'] == stock_name]['Cluster'].values[0]
+#     similar_stocks = stock_df[stock_df['Cluster'] == stock_cluster]['Ticker'].tolist()
+#     similar_stocks.remove(stock_name)
+#     return similar_stocks
+
+# # Find closest stock function
+# def find_closest_stock(stock_name, stock_df, scaled_data):
+#     if stock_name not in stock_df['Ticker'].values:
+#         return None
+#     stock_cluster = stock_df[stock_df['Ticker'] == stock_name]['Cluster'].values[0]
+#     stock_index = stock_df[stock_df['Ticker'] == stock_name].index[0]
+#     cluster_indices = stock_df[stock_df['Cluster'] == stock_cluster].index
+#     cluster_data = scaled_data[cluster_indices]
+#     distances = np.linalg.norm(cluster_data - scaled_data[stock_index], axis=1)
+#     closest_index = cluster_indices[np.argpartition(distances, 1)[1]]
+#     return stock_df.loc[closest_index, 'Ticker']
+
+# Streamlit UI
+# new_list = cleaned_stock_data['Ticker'].tolist()
+# result = st.selectbox('STOCK NAME', new_list)
+
+# nearest_stock = find_nearest_stock_to_target(result,cleaned_stock_data, centroids_df)
+# if nearest_stock:
+#     st.write(f"The closest stock to {result} is {nearest_stock}")
+#     nearest_stock_data = cleaned_stock_data[cleaned_stock_data['Ticker'] == nearest_stock].T
+#     st.write("Details of the closest stock:")
+#     st.dataframe(nearest_stock_data)
+# else:
+#     st.write(f"Stock '{result}' not found in the dataset.")
+
+# similar_stocks_st = find_similar_stocks(result, data)
+# if similar_stocks_st:
+#     similar_stocks_data = cleaned_stock_data[cleaned_stock_data['Ticker'].isin(similar_stocks_st)].T
+#     st.write("Similar stocks which belong to the same category:")
+#     st.dataframe(similar_stocks_data)
+# else:
+#     st.write("No similar stocks found.")
+
